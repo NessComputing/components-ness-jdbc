@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
-
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -54,15 +54,19 @@ public final class ApplicationNameWrapper implements Function<DataSource, DataSo
     }
 
     /**
-     * Returns a proxy for a data source. All methods on the datasource object are passed through the proxy. In addition, the
-     * DataSource also implements {@link java.io.Closeable}.
+     * Returns a proxy for a data source. All methods on the datasource object are passed through the proxy.
      */
     @Override
-    public DataSource apply(final DataSource dataSource)
+    public DataSource apply(@Nullable final DataSource dataSource)
     {
-        return (DataSource) Proxy.newProxyInstance(dataSource.getClass().getClassLoader(),
-                                                   dataSource.getClass().getInterfaces(),
-                                                   new ApplicationNameInvocationHandler(dataSource));
+        if (dataSource == null) {
+            return null;
+        }
+        else {
+            return (DataSource) Proxy.newProxyInstance(dataSource.getClass().getClassLoader(),
+                                                       dataSource.getClass().getInterfaces(),
+                                                       new ApplicationNameInvocationHandler(dataSource));
+        }
     }
 
     class ApplicationNameInvocationHandler extends AbstractProxyInvocationHandler

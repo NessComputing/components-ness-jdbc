@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Set;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import com.google.common.base.Function;
@@ -45,12 +46,19 @@ public final class CloseableWrapper implements Function<DataSource, DataSource>
      * DataSource also implements {@link java.io.Closeable}.
      */
     @Override
-    public DataSource apply(final DataSource dataSource)
+    public DataSource apply(@Nullable final DataSource dataSource)
     {
-        Set<Class<?>> interfaces = Sets.newHashSet(dataSource.getClass().getInterfaces());
-        interfaces.add(Closeable.class);
-        return (DataSource) Proxy.newProxyInstance(dataSource.getClass().getClassLoader(),
-                interfaces.toArray(new Class<?>[interfaces.size()]), new CloseableInvocationHandler(dataSource));
+        if (dataSource == null) {
+            return null;
+        }
+        else {
+
+            Set<Class<?>> interfaces = Sets.newHashSet(dataSource.getClass().getInterfaces());
+            interfaces.add(Closeable.class);
+            return (DataSource) Proxy.newProxyInstance(dataSource.getClass().getClassLoader(),
+                                                       interfaces.toArray(new Class<?>[interfaces.size()]),
+                                                       new CloseableInvocationHandler(dataSource));
+        }
     }
 
     class CloseableInvocationHandler extends AbstractProxyInvocationHandler
