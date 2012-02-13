@@ -36,7 +36,9 @@ import com.google.inject.Stage;
 import com.google.inject.name.Names;
 import com.nesscomputing.config.Config;
 import com.nesscomputing.jdbc.DatabaseModule;
+import com.nesscomputing.testing.lessio.AllowDNSResolution;
 
+@AllowDNSResolution
 public class DatabaseModuleTest
 {
     public static final String DATABASE_NAME = "demo";
