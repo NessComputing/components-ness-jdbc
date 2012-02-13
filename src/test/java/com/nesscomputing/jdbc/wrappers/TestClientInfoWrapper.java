@@ -27,8 +27,11 @@ import org.skife.jdbi.v2.IDBI;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
 import com.nesscomputing.testing.lessio.AllowNetworkAccess;
 
+/**
+ * This test requires a local postgres database and a "postgres" user that can connect to the database without a password.
+ */
 @AllowDNSResolution
-@AllowNetworkAccess(endpoints={"127.0.0.1:*"})
+@AllowNetworkAccess(endpoints={"127.0.0.1:5432"})
 public class TestClientInfoWrapper
 {
     private IDBI testDbi;
@@ -36,7 +39,7 @@ public class TestClientInfoWrapper
     @Before
     public void setUp()
     {
-        testDbi = new DBI("jdbc:postgresql://localhost/trumpet_test", "trumpet_test", "");
+        testDbi = new DBI("jdbc:postgresql://localhost/postgres", "postgres", "");
     }
 
     @Test
