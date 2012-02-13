@@ -1,20 +1,17 @@
-Ness Computing Configuration Component
-======================================
+Ness Computing JDBC Component
+=============================
 
 Component Charter
 -----------------
 
-* Access to application configuration on the file system, the class path and HTTP and HTTPS URIs.
-* Create beans to access configuration.
-* Allow hierarchical configuration
-* integrate system properties for configuration overrides
+* Provide pooled access to databases.
+* Binds multiple DBI and Datasource objects using annotations.
+* Allows global and local configuration for datasources.
 
 Component Level
 ---------------
 
-*Foundation component*
-
-* Allowed dependencies: logging component, tinyhttp component.
+* Uses configuration, logging, lifecycle.
 
 ----
 Copyright (C) 2012 Ness Computing, Inc.
