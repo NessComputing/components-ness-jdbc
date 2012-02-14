@@ -18,12 +18,27 @@ package com.nesscomputing.jdbc.wrappers;
 import java.sql.Array;
 import java.sql.Connection;
 
+import ness.db.postgres.junit.LocalPostgresControllerTestRule;
+import ness.db.postgres.junit.PostgresRules;
+
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Stage;
+import com.google.inject.name.Named;
+import com.google.inject.util.Modules;
+import com.nesscomputing.config.ConfigModule;
+import com.nesscomputing.jdbc.DatabaseModule;
+import com.nesscomputing.lifecycle.Lifecycle;
+import com.nesscomputing.lifecycle.LifecycleStage;
+import com.nesscomputing.lifecycle.guice.LifecycleModule;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
 import com.nesscomputing.testing.lessio.AllowNetworkAccess;
 
@@ -34,12 +49,44 @@ import com.nesscomputing.testing.lessio.AllowNetworkAccess;
 @AllowNetworkAccess(endpoints={"127.0.0.1:5432"})
 public class TestCreateArrayOfWrapper
 {
+    @Rule
+    public static final LocalPostgresControllerTestRule DATABASE = PostgresRules.databaseControllerRule();
+
+    @Inject
+    @Named("test")
     private IDBI testDbi;
 
+    @Inject
+    private Lifecycle lifecycle;
+
+    // As this test wants to test a wrapper that is only available with the database module, it can not use the
+    // DBI available from DATABASE.getDbi() directly (that would be a direct postgres connection). The following
+    // Modules.override integrates the Database module with the Guice module from ness-pg so that it connects
+    // to the temporary database but still uses the C3P0 pooling.
+    //
+    // For any unit tests that wants to test deeper features inside the ness-jdbc code, this is the way to do it.
     @Before
     public void setUp()
     {
-        testDbi = new DBI("jdbc:postgresql://localhost/postgres", "postgres", "");
+        final Injector inj = Guice.createInjector(Stage.PRODUCTION,
+                                                  Modules.override(DATABASE.getGuiceModule("test")).with(new DatabaseModule("test")),
+                                                  ConfigModule.forTesting(),
+                                                  new LifecycleModule());
+
+        inj.injectMembers(this);
+
+        Assert.assertNotNull(testDbi);
+        Assert.assertNotNull(lifecycle);
+
+        lifecycle.executeTo(LifecycleStage.START_STAGE);
+    }
+
+    @After
+    public void tearDown()
+    {
+        Assert.assertNotNull(lifecycle);
+
+        lifecycle.executeTo(LifecycleStage.STOP_STAGE);
     }
 
     @Test

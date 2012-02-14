@@ -16,11 +16,11 @@
 package com.nesscomputing.jdbc;
 
 import java.lang.annotation.Annotation;
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import org.apache.commons.configuration.CombinedConfiguration;
@@ -58,16 +58,14 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
     private Function<DataSource, DataSource> dataSourceWrapper = Functions.identity();
 
     private final String dbName;
-    private final DatabaseConfig dbConfig;
-    private final Properties dbProperties;
+    private URI uri = null;
+    private Properties props = null;
     private final Annotation annotation;
     private final String propertiesPrefix;
 
-    C3P0DataSourceProvider(final String dbName, @Nullable final DatabaseConfig dbConfig, final Properties dbProperties, final Annotation annotation)
+    C3P0DataSourceProvider(final String dbName, final Annotation annotation)
     {
         this.dbName = dbName;
-        this.dbConfig = dbConfig;
-        this.dbProperties = dbProperties;
         this.annotation = annotation;
         this.propertiesPrefix = PREFIX + dbName;
 
@@ -92,8 +90,8 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
         this.config = config;
     }
 
-    @Inject
-    void getWrappers(final Injector injector)
+    @Inject(optional = true)
+    void injectDependencies(final Injector injector)
     {
         final Binding<Set<Function<DataSource, DataSource>>> datasourceBindings = injector.getExistingBinding(Key.get(new TypeLiteral<Set<Function<DataSource, DataSource>>> () { }, annotation));
         if (datasourceBindings != null) {
@@ -101,6 +99,17 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
                 dataSourceWrapper = Functions.compose(dataSourceWrapper, fn);
             }
         }
+
+        final Binding<Properties> propertiesBinding = injector.getExistingBinding(Key.get(Properties.class, annotation));
+        if (propertiesBinding != null) {
+            props = propertiesBinding.getProvider().get();
+        }
+        final Binding<URI> uriBinding = injector.getExistingBinding(Key.get(URI.class, annotation));
+        if (uriBinding != null) {
+            uri = uriBinding.getProvider().get();
+            Preconditions.checkArgument(uri != null, "the preset database URI must not be null!");
+        }
+
     }
 
     @Override
@@ -121,14 +130,14 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
 
         final DatabaseConfig databaseConfig;
 
-        if (dbConfig == null) {
+        if (uri == null) {
             LOG.info("Creating datasource %s via C3P0", dbName);
             final DatabaseConfig dbConfig = config.getBean(DatabaseConfig.class, ImmutableMap.of("dbName", dbName));
             databaseConfig = dbConfig;
         }
         else {
-            LOG.info("Using preset URI %s for %s via C3P0", dbConfig.getDbUri(), dbName);
-            databaseConfig = dbConfig;
+            LOG.info("Using preset URI %s for %s via C3P0", uri, dbName);
+            databaseConfig = new ImmutableDatabaseConfig(uri);
         }
 
         final Properties poolProps = getProperties("pool");
@@ -148,10 +157,10 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
             cc.addConfiguration(config.getConfiguration(propertiesPrefix + "." + suffix));
             cc.addConfiguration(config.getConfiguration(DEFAULTS_PREFIX + "." + suffix));
 
-            if (dbProperties != null) {
+            if (props != null) {
                 // Allow setting of internal defaults by using "ds.xxx" and "pool.xxx" if a properties
                 // object is present.
-                cc.addConfiguration(new ImmutableConfiguration(ConfigurationConverter.getConfiguration(dbProperties).subset(suffix)));
+                cc.addConfiguration(new ImmutableConfiguration(ConfigurationConverter.getConfiguration(props).subset(suffix)));
             }
 
             return ConfigurationConverter.getProperties(cc);

@@ -28,8 +28,8 @@ import org.skife.jdbi.v2.util.StringMapper;
 import com.nesscomputing.logging.Log;
 
 /**
- * Check that a pool is ready for use
- * @author steven
+ * Check that a pool is ready for use.
+ *
  */
 class DatabaseChecker {
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");

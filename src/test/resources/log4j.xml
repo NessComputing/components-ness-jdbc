@@ -30,6 +30,11 @@
     </layout>
   </appender>
 
+  <!-- silence the tons of log messages for all the unit tests from c3p0 start and stop -->
+  <logger name="com.mchange">
+    <level value="warn" />
+  </logger>
+
   <!--  set the root logger -->
   <root>
     <level value="debug" />

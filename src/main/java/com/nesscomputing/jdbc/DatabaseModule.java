@@ -16,15 +16,12 @@
 package com.nesscomputing.jdbc;
 
 import java.lang.annotation.Annotation;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import org.skife.jdbi.v2.IDBI;
-
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -69,37 +66,21 @@ public class DatabaseModule extends AbstractModule
     private static final Log LOG = Log.findLog();
 
     private final String dbName;
-    private final DatabaseConfig dbConfig;
-    private final Properties dbProperties;
     private final Annotation annotation;
 
     public DatabaseModule(@Nonnull String dbName)
     {
-        this(dbName, null, new Properties(), Names.named(dbName));
+        this(dbName, Names.named(dbName));
     }
 
     public DatabaseModule(@Nonnull String dbName,
                           @Nonnull final Annotation annotation)
     {
-        this(dbName, null, new Properties(), annotation);
-    }
-
-    public DatabaseModule(@Nonnull String dbName,
-                          @Nullable final DatabaseConfig dbConfig,
-                          @Nonnull final Properties dbProperties,
-                          @Nonnull Annotation annotation)
-    {
         Preconditions.checkArgument(dbName != null, "the database name must not be null!");
-        if (dbConfig != null) {
-            Preconditions.checkArgument(dbConfig.getDbUri() != null, "the preset database URI must not be null!");
-        }
-        Preconditions.checkArgument(dbProperties != null, "the database properties must not be null!");
         Preconditions.checkArgument(annotation != null, "the database annotation must not be null!");
         Preconditions.checkArgument(!BLACKLIST.contains(dbName), "%s is not a valid pool name", dbName);
 
         this.dbName = dbName;
-        this.dbConfig = dbConfig;
-        this.dbProperties = dbProperties;
         this.annotation = annotation;
 
         // Check for UTC early. UTC is necessary for all our services.
@@ -110,7 +91,7 @@ public class DatabaseModule extends AbstractModule
     protected void configure()
     {
         LOG.info("DataSource [%s] is using pool configuration [%s]", annotation, dbName);
-        bind(DataSource.class).annotatedWith(annotation).toProvider(new C3P0DataSourceProvider(dbName, dbConfig, dbProperties, annotation)).in(Scopes.SINGLETON);
+        bind(DataSource.class).annotatedWith(annotation).toProvider(new C3P0DataSourceProvider(dbName, annotation)).in(Scopes.SINGLETON);
         bind(IDBI.class).annotatedWith(annotation).toProvider(new IDBIProvider(annotation)).in(Scopes.SINGLETON);
 
         NessSqlWrapperBinder.bindDataSourceWrapper(binder(), annotation).to(ApplicationNameWrapper.class).in(Scopes.SINGLETON);
