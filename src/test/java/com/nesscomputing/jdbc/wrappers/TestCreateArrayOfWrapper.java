@@ -18,9 +18,6 @@ package com.nesscomputing.jdbc.wrappers;
 import java.sql.Array;
 import java.sql.Connection;
 
-import ness.db.postgres.junit.LocalPostgresControllerTestRule;
-import ness.db.postgres.junit.PostgresRules;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,6 +32,8 @@ import com.google.inject.Stage;
 import com.google.inject.name.Named;
 import com.google.inject.util.Modules;
 import com.nesscomputing.config.ConfigModule;
+import com.nesscomputing.db.postgres.junit.LocalPostgresControllerTestRule;
+import com.nesscomputing.db.postgres.junit.PostgresRules;
 import com.nesscomputing.jdbc.DatabaseModule;
 import com.nesscomputing.lifecycle.Lifecycle;
 import com.nesscomputing.lifecycle.LifecycleStage;
