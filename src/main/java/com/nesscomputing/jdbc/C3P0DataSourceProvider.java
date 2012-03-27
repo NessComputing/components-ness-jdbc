@@ -152,21 +152,19 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
 
     private Properties getProperties(final String suffix)
     {
+        final CombinedConfiguration cc = new CombinedConfiguration(new OverrideCombiner());
+
+        if (props != null) {
+            // Allow setting of internal defaults by using "ds.xxx" and "pool.xxx" if a properties
+            // object is present.
+            cc.addConfiguration(new ImmutableConfiguration(ConfigurationConverter.getConfiguration(props).subset(suffix)));
+        }
+
         if (config != null) {
-            final CombinedConfiguration cc = new CombinedConfiguration(new OverrideCombiner());
             cc.addConfiguration(config.getConfiguration(propertiesPrefix + "." + suffix));
             cc.addConfiguration(config.getConfiguration(DEFAULTS_PREFIX + "." + suffix));
-
-            if (props != null) {
-                // Allow setting of internal defaults by using "ds.xxx" and "pool.xxx" if a properties
-                // object is present.
-                cc.addConfiguration(new ImmutableConfiguration(ConfigurationConverter.getConfiguration(props).subset(suffix)));
-            }
-
-            return ConfigurationConverter.getProperties(cc);
         }
-        else {
-            return new Properties();
-        }
+
+        return ConfigurationConverter.getProperties(cc);
     }
 }
