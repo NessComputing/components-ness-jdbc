@@ -27,6 +27,8 @@ import org.skife.jdbi.v2.ResultSetMapperFactory;
 import org.skife.jdbi.v2.TimingCollector;
 import org.skife.jdbi.v2.logging.Log4JLog;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;
+import org.skife.jdbi.v2.tweak.transactions.SerializableTransactionRunner;
+import org.skife.jdbi.v2.tweak.transactions.SerializableTransactionRunner.Configuration;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -75,6 +77,7 @@ public class IDBIProvider implements Provider<IDBI> {
     public IDBI get() {
         DBI dbi = new DBI(injector.getInstance(Key.get(DataSource.class, annotation)));
         dbi.setSQLLog(new Log4JLog());
+        dbi.setTransactionHandler(new SerializableTransactionRunner(new Configuration(), dbi.getTransactionHandler()));
 
         if (timingCollector != null) {
             dbi.setTimingCollector(timingCollector);
