@@ -18,7 +18,17 @@ package com.nesscomputing.jdbc;
 import java.lang.annotation.Annotation;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
+
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.inject.Binding;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.skife.jdbi.v2.DBI;
@@ -30,29 +40,39 @@ import org.skife.jdbi.v2.tweak.ArgumentFactory;
 import org.skife.jdbi.v2.tweak.transactions.SerializableTransactionRunner;
 import org.skife.jdbi.v2.tweak.transactions.SerializableTransactionRunner.Configuration;
 
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.Provider;
-
 /**
  * Bind an IDBI instance with a given annotation, using a DataSource with the same
  * annotation as the backing for it.
  */
-public class IDBIProvider implements Provider<IDBI> {
+public class IDBIProvider implements Provider<IDBI>
+{
+    private static final TypeLiteral<Set<Function<IDBI, IDBI>>> IDBI_IDBI_FUNCTION_TYPE = new TypeLiteral<Set<Function<IDBI, IDBI>>>() {};
+
     private Injector injector;
     private TimingCollector timingCollector = null;
     private Set<ArgumentFactory<?>> argumentFactories = null;
     private Set<ResultSetMapperFactory> resultSetMapperFactories = null;
+    private Set<Function<IDBI, IDBI>> dbiWrappers = null;
+
     private final Annotation annotation;
 
-    public IDBIProvider(Annotation annotation) {
+    public IDBIProvider(@Nonnull final Annotation annotation)
+    {
+        Preconditions.checkNotNull(annotation, "The annotation can not be null!");
         this.annotation = annotation;
     }
 
     @Inject
-    void setInjector(final Injector injector) {
+    void setInjector(final Injector injector)
+    {
         this.injector = injector;
+
+        final Binding<Set<Function<IDBI, IDBI>>> dbiWrapperBindings = injector.getExistingBinding(Key.get(IDBI_IDBI_FUNCTION_TYPE, annotation));
+
+        if (dbiWrapperBindings != null)
+        {
+            dbiWrappers = dbiWrapperBindings.getProvider().get();
+        }
     }
 
     @Inject(optional=true)
@@ -75,7 +95,7 @@ public class IDBIProvider implements Provider<IDBI> {
 
     @Override
     public IDBI get() {
-        DBI dbi = new DBI(injector.getInstance(Key.get(DataSource.class, annotation)));
+        final DBI dbi = new DBI(injector.getInstance(Key.get(DataSource.class, annotation)));
         dbi.setSQLLog(new Log4JLog());
         dbi.setTransactionHandler(new SerializableTransactionRunner(new Configuration(), dbi.getTransactionHandler()));
 
@@ -95,6 +115,14 @@ public class IDBIProvider implements Provider<IDBI> {
             }
         }
 
-        return dbi;
+        IDBI idbi = dbi;
+
+        if (dbiWrappers != null) {
+            for (Function<IDBI, IDBI> f : dbiWrappers) {
+                idbi = f.apply(idbi);
+            }
+        }
+
+        return idbi;
     }
 }
