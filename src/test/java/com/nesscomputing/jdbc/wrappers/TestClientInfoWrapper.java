@@ -15,77 +15,62 @@
  */
 package com.nesscomputing.jdbc.wrappers;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.util.Properties;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.skife.jdbi.v2.IDBI;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.google.inject.name.Named;
-import com.google.inject.util.Modules;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.skife.jdbi.v2.IDBI;
+
+import com.nesscomputing.config.Config;
 import com.nesscomputing.config.ConfigModule;
-import com.nesscomputing.db.postgres.junit.LocalPostgresControllerTestRule;
-import com.nesscomputing.db.postgres.junit.PostgresRules;
+import com.nesscomputing.db.postgres.junit.EmbeddedPostgresRules;
+import com.nesscomputing.db.postgres.junit.EmbeddedPostgresTestDatabaseRule;
 import com.nesscomputing.jdbc.DatabaseModule;
-import com.nesscomputing.lifecycle.Lifecycle;
-import com.nesscomputing.lifecycle.LifecycleStage;
-import com.nesscomputing.lifecycle.guice.LifecycleModule;
+import com.nesscomputing.lifecycle.junit.LifecycleRule;
+import com.nesscomputing.lifecycle.junit.LifecycleRunner;
+import com.nesscomputing.lifecycle.junit.LifecycleStatement;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
-import com.nesscomputing.testing.lessio.AllowNetworkAccess;
 
 /**
  * This test requires a local postgres database and a "postgres" user that can connect to the database without a password.
  */
 @AllowDNSResolution
-@AllowNetworkAccess(endpoints={"127.0.0.1:5432"})
+@RunWith(LifecycleRunner.class)
 public class TestClientInfoWrapper
 {
+    @LifecycleRule
+    public final LifecycleStatement lifecycleRule = LifecycleStatement.serviceDiscoveryLifecycle();
+
     @Rule
-    public static final LocalPostgresControllerTestRule DATABASE = PostgresRules.databaseControllerRule();
+    public EmbeddedPostgresTestDatabaseRule postgresRule = EmbeddedPostgresRules.embeddedDatabaseRule(URI.create("classpath:/sql"));
 
     @Inject
     @Named("test")
     private IDBI testDbi;
 
-    @Inject
-    private Lifecycle lifecycle;
-
-    // As this test wants to test a wrapper that is only available with the database module, it can not use the
-    // DBI available from DATABASE.getDbi() directly (that would be a direct postgres connection). The following
-    // Modules.override integrates the Database module with the Guice module from ness-pg so that it connects
-    // to the temporary database but still uses the C3P0 pooling.
-    //
-    // For any unit tests that wants to test deeper features inside the ness-jdbc code, this is the way to do it.
     @Before
     public void setUp()
     {
+        final Config config = postgresRule.getTweakedConfig("test");
         final Injector inj = Guice.createInjector(Stage.PRODUCTION,
-                                                  Modules.override(DATABASE.getGuiceModule("test")).with(new DatabaseModule("test")),
-                                                  ConfigModule.forTesting(),
-                                                  new LifecycleModule());
+                                                  new ConfigModule(config),
+                                                  lifecycleRule.getLifecycleModule(),
+                                                  new DatabaseModule("test"));
 
         inj.injectMembers(this);
 
         Assert.assertNotNull(testDbi);
-        Assert.assertNotNull(lifecycle);
-
-        lifecycle.executeTo(LifecycleStage.START_STAGE);
-    }
-
-    @After
-    public void tearDown()
-    {
-        Assert.assertNotNull(lifecycle);
-
-        lifecycle.executeTo(LifecycleStage.STOP_STAGE);
     }
 
     @Test
