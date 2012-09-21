@@ -22,12 +22,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
-
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+
 import com.nesscomputing.jdbc.wrappers.AbstractProxyInvocationHandler.MethodInterceptor;
 import com.nesscomputing.logging.Log;
 
@@ -57,11 +58,16 @@ public class SchemaSelectorWrapper implements Function<DataSource, DataSource>
     }
 
     @Override
-    public DataSource apply(final DataSource dataSource)
+    public DataSource apply(@Nonnull final DataSource dataSource)
     {
-        return (DataSource) Proxy.newProxyInstance(dataSource.getClass().getClassLoader(),
-                                                   dataSource.getClass().getInterfaces(),
-                                                   new SchemaSelectorInvocationHandler(dataSource));
+        if (dataSource == null) {
+            return null;
+        }
+        else {
+            return (DataSource) Proxy.newProxyInstance(dataSource.getClass().getClassLoader(),
+                                                       dataSource.getClass().getInterfaces(),
+                                                       new SchemaSelectorInvocationHandler(dataSource));
+        }
     }
 
     class SchemaSelectorInvocationHandler extends AbstractProxyInvocationHandler
