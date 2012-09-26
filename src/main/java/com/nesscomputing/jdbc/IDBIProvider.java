@@ -46,13 +46,15 @@ import org.skife.jdbi.v2.tweak.transactions.SerializableTransactionRunner.Config
  */
 public class IDBIProvider implements Provider<IDBI>
 {
+    private static final TypeLiteral<Set<Function<DBI, DBI>>> DBI_DBI_FUNCTION_TYPE = new TypeLiteral<Set<Function<DBI, DBI>>>() {};
     private static final TypeLiteral<Set<Function<IDBI, IDBI>>> IDBI_IDBI_FUNCTION_TYPE = new TypeLiteral<Set<Function<IDBI, IDBI>>>() {};
 
     private Injector injector;
     private TimingCollector timingCollector = null;
     private Set<ArgumentFactory<?>> argumentFactories = null;
     private Set<ResultSetMapperFactory> resultSetMapperFactories = null;
-    private Set<Function<IDBI, IDBI>> dbiWrappers = null;
+    private Set<Function<DBI, DBI>> dbiWrappers = null;
+    private Set<Function<IDBI, IDBI>> idbiWrappers = null;
 
     private final Annotation annotation;
 
@@ -67,13 +69,18 @@ public class IDBIProvider implements Provider<IDBI>
     {
         this.injector = injector;
 
-        final Binding<Set<Function<IDBI, IDBI>>> dbiWrapperBindings = injector.getExistingBinding(Key.get(IDBI_IDBI_FUNCTION_TYPE, annotation));
+        final Binding<Set<Function<DBI, DBI>>> dbiWrapperBindings = injector.getExistingBinding(Key.get(DBI_DBI_FUNCTION_TYPE, annotation));
 
-        if (dbiWrapperBindings != null)
-        {
+        if (dbiWrapperBindings != null) {
             dbiWrappers = dbiWrapperBindings.getProvider().get();
         }
-    }
+
+        final Binding<Set<Function<IDBI, IDBI>>> idbiWrapperBindings = injector.getExistingBinding(Key.get(IDBI_IDBI_FUNCTION_TYPE, annotation));
+
+        if (idbiWrapperBindings != null) {
+            idbiWrappers = idbiWrapperBindings.getProvider().get();
+        }
+}
 
     @Inject(optional=true)
     void setTimingCollector(final TimingCollector timingCollector)
@@ -115,10 +122,18 @@ public class IDBIProvider implements Provider<IDBI>
             }
         }
 
-        IDBI idbi = dbi;
+        DBI wrappedDbi = dbi;
 
         if (dbiWrappers != null) {
-            for (Function<IDBI, IDBI> f : dbiWrappers) {
+            for (Function<DBI, DBI> f : dbiWrappers) {
+                wrappedDbi = f.apply(wrappedDbi);
+            }
+        }
+
+        IDBI idbi = wrappedDbi;
+
+        if (idbiWrappers != null) {
+            for (Function<IDBI, IDBI> f : idbiWrappers) {
                 idbi = f.apply(idbi);
             }
         }
