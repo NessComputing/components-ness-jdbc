@@ -26,6 +26,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.multibindings.Multibinder;
 
+import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.IDBI;
 
 public final class NessSqlWrapperBinder
@@ -44,8 +45,13 @@ public final class NessSqlWrapperBinder
         return  Multibinder.newSetBinder(binder, new TypeLiteral<Function<Connection, Connection>>() {}, annotation).addBinding();
     }
 
-    public static LinkedBindingBuilder<Function<IDBI, IDBI>> bindDbiWrapper(final Binder binder, final Annotation annotation)
+    public static LinkedBindingBuilder<Function<IDBI, IDBI>> bindIdbiWrapper(final Binder binder, final Annotation annotation)
     {
         return  Multibinder.newSetBinder(binder, new TypeLiteral<Function<IDBI, IDBI>>() {}, annotation).addBinding();
+    }
+
+    public static LinkedBindingBuilder<Function<DBI, DBI>> bindDbiWrapper(final Binder binder, final Annotation annotation)
+    {
+        return  Multibinder.newSetBinder(binder, new TypeLiteral<Function<DBI, DBI>>() {}, annotation).addBinding();
     }
 }
