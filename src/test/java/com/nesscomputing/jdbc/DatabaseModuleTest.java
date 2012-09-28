@@ -45,8 +45,9 @@ public class DatabaseModuleTest
     private Injector injector = null;
 
     @Before
-    public void setUp()
+    public void setUp() throws Exception
     {
+        Class.forName("org.h2.Driver");
         final Config fakeConfig = Config.getFixedConfig("ness.db.defaults.pool.acquireIncrement", "5",
                                                         "ness.db.demo.uri", "jdbc:h2:mem:demo",
                                                         "ness.db.demo.pool.maxPoolSize", "50");
