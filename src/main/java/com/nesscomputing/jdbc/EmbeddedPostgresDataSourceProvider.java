@@ -1,31 +1,27 @@
 package com.nesscomputing.jdbc;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.Iterator;
-import java.util.List;
-
+import java.net.URI;
 import javax.sql.DataSource;
 
-import org.apache.commons.configuration.AbstractConfiguration;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Closeables;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.mchange.v2.c3p0.DriverManagerDataSource;
 import com.nesscomputing.config.Config;
-import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQL;
-import com.nesscomputing.lifecycle.LifecycleStage;
+import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQLController;
 import com.nesscomputing.lifecycle.guice.AbstractLifecycleProvider;
-import com.nesscomputing.lifecycle.guice.LifecycleAction;
 
 /**
  * Provide a DatabaseModule with a DataSource from the embedded Postgres driver.
- * Configuration options under <code>ness.db.&lt;db-name&gt;</code> will be passed
- * to the postmaster.
+ * Schemas may be pre-loaded for drop-in replacement of "normal" databases.  Example
+ * configuration:
+ * <pre>
+ * ness.db.mydb.schema-uri=classpath:/test-sql
+ * ness.db.mydb.schema=test1,test2
+ * </pre>
  */
 class EmbeddedPostgresDataSourceProvider extends AbstractLifecycleProvider<DataSource>
 {
-    private static final List<String> IGNORED_KEYS = ImmutableList.of("provider", "uri");
 
     private final String dbName;
     private volatile Config config;
@@ -44,36 +40,16 @@ class EmbeddedPostgresDataSourceProvider extends AbstractLifecycleProvider<DataS
     @Override
     protected DataSource internalGet()
     {
-        AbstractConfiguration epgConfig = config.getConfiguration("ness.db." + dbName);
+        final DatabaseConfig epgConfig = config.getBean(DatabaseConfig.class, ImmutableMap.of("dbName", dbName));
 
-        EmbeddedPostgreSQL.Builder builder = EmbeddedPostgreSQL.builder();
+        final URI baseUri = epgConfig.getSchemaUri();
+        final String[] personalities = epgConfig.getSchemas().toArray(new String[epgConfig.getSchemas().size()]);
 
-        @SuppressWarnings("unchecked")
-        Iterator<String> keys = epgConfig.getKeys();
+        final EmbeddedPostgreSQLController controller = new EmbeddedPostgreSQLController(baseUri, personalities);
 
-        while (keys.hasNext()) {
-            String key = keys.next();
-            if (IGNORED_KEYS.contains(key)) {
-                continue;
-            }
-            builder.setServerConfig(key, epgConfig.getString(key));
-        }
-
-        final EmbeddedPostgreSQL epg;
-        try {
-            epg = builder.start();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-
-        addAction(LifecycleStage.STOP_STAGE, new LifecycleAction<DataSource>() {
-            @Override
-            public void performAction(DataSource obj)
-            {
-                Closeables.closeQuietly(epg);
-            }
-        });
-
-        return epg.getPostgresDatabase();
+        final DriverManagerDataSource ds = new DriverManagerDataSource();
+        ds.setJdbcUrl(controller.getJdbcUri());
+        ds.setUser("postgres");
+        return ds;
     }
 }

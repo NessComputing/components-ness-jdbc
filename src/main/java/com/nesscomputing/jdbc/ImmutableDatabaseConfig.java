@@ -17,7 +17,7 @@ package com.nesscomputing.jdbc;
 
 import java.net.URI;
 
-final class ImmutableDatabaseConfig extends DatabaseConfig
+public final class ImmutableDatabaseConfig extends DatabaseConfig
 {
     private final URI dbUri;
 
