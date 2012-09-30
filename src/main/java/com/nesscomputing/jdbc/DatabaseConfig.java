@@ -18,9 +18,16 @@ package com.nesscomputing.jdbc;
 import java.net.URI;
 
 import org.skife.config.Config;
+import org.skife.config.Default;
+import org.skife.config.DefaultNull;
 
-public abstract class DatabaseConfig
+abstract class DatabaseConfig
 {
+    @Config({"ness.db.${dbName}.provider", "ness.db.defaults.provider"})
+    @Default("C3P0")
+    public abstract DatabaseProviderType getProviderType();
+
     @Config({"ness.db.${dbName}.uri","ness.db.defaults.uri"})
+    @DefaultNull
     public abstract URI getDbUri();
 }
