@@ -27,6 +27,12 @@ public final class ImmutableDatabaseConfig extends DatabaseConfig
     }
 
     @Override
+    public DatabaseProviderType getProviderType()
+    {
+        return DatabaseProviderType.C3P0;
+    }
+
+    @Override
     public URI getDbUri()
     {
         return dbUri;

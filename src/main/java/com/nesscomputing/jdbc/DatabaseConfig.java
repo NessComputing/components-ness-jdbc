@@ -16,11 +16,34 @@
 package com.nesscomputing.jdbc;
 
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 import org.skife.config.Config;
+import org.skife.config.Default;
+import org.skife.config.DefaultNull;
 
 public abstract class DatabaseConfig
 {
+    @Config({"ness.db.${dbName}.provider", "ness.db.defaults.provider"})
+    @Default("C3P0")
+    public DatabaseProviderType getProviderType() {
+        return DatabaseProviderType.C3P0;
+    }
+
     @Config({"ness.db.${dbName}.uri","ness.db.defaults.uri"})
+    @DefaultNull
     public abstract URI getDbUri();
+
+    @Config({"ness.db.${dbName}.schema-uri", "ness.db.defaults.schema-uri"})
+    @Default("classpath:/")
+    public URI getSchemaUri() {
+        return URI.create("classpath:/");
+    }
+
+    @Config({"ness.db.${dbName}.schema", "ness.db.defaults.schema"})
+    @Default("")
+    public List<String> getSchemas() {
+        return Collections.emptyList();
+    }
 }
