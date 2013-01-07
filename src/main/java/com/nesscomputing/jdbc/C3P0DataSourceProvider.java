@@ -146,7 +146,10 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
         final Properties driverProps = getProperties("ds");
         LOG.info("Setting driver properties for %s to %s", dbName, driverProps);
 
-        final DataSource dataSource = DataSources.pooledDataSource(DataSources.unpooledDataSource(databaseConfig.getDbUri().toString(), driverProps), poolProps);
+        DataSource unpooledDataSource = DataSources.unpooledDataSource(databaseConfig.getDbUri().toString(), driverProps);
+        DatabaseChecker.checkConnection(unpooledDataSource);
+
+        final DataSource dataSource = DataSources.pooledDataSource(unpooledDataSource, poolProps);
         return dataSource;
     }
 
