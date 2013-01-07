@@ -41,8 +41,10 @@ import com.nesscomputing.lifecycle.junit.LifecycleRule;
 import com.nesscomputing.lifecycle.junit.LifecycleRunner;
 import com.nesscomputing.lifecycle.junit.LifecycleStatement;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
+import com.nesscomputing.testing.lessio.AllowNetworkAccess;
 
 @AllowDNSResolution
+@AllowNetworkAccess(endpoints= {"127.0.0.1:*"})
 @RunWith(LifecycleRunner.class)
 public class TestCreateArrayOfWrapper
 {

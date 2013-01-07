@@ -41,11 +41,13 @@ import com.nesscomputing.lifecycle.junit.LifecycleRule;
 import com.nesscomputing.lifecycle.junit.LifecycleRunner;
 import com.nesscomputing.lifecycle.junit.LifecycleStatement;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
+import com.nesscomputing.testing.lessio.AllowNetworkAccess;
 
 /**
  * This test requires a local postgres database and a "postgres" user that can connect to the database without a password.
  */
 @AllowDNSResolution
+@AllowNetworkAccess(endpoints= {"127.0.0.1:*"})
 @RunWith(LifecycleRunner.class)
 public class TestClientInfoWrapper
 {
