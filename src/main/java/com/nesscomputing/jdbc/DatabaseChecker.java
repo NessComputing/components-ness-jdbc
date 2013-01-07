@@ -15,6 +15,7 @@
  */
 package com.nesscomputing.jdbc;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.TimeZone;
 
@@ -59,6 +60,16 @@ class DatabaseChecker {
         if (!"UTC".equalsIgnoreCase(timeZone)) {
             throw new IllegalStateException(String.format("Postgres database time zone must be set to UTC but is %s. Please fix your database configuration.", timeZone));
         }
+    }
+
+    /**
+     * Check that the connection works, before a pool is created.  That way if the URL is wrong we get a proper error message
+     * rather than "timeout while waiting for acquire" from C3P0.
+     */
+    static void checkConnection(DataSource unpooledDataSource) throws SQLException
+    {
+        Connection connection = unpooledDataSource.getConnection();
+        connection.close();
     }
 
     static void fixUTCTimezone()
