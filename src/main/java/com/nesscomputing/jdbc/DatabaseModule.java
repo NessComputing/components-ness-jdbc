@@ -100,4 +100,36 @@ public class DatabaseModule extends AbstractModule
         NessSqlWrapperBinder.bindConnectionWrapper(binder(), annotation).to(CreateArrayOfWrapper.class).in(Scopes.SINGLETON);
         NessSqlWrapperBinder.bindConnectionWrapper(binder(), annotation).to(ClientInfoWrapper.class).in(Scopes.SINGLETON);
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((annotation == null) ? 0 : annotation.hashCode());
+        result = prime * result + ((dbName == null) ? 0 : dbName.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        DatabaseModule other = (DatabaseModule) obj;
+        if (annotation == null) {
+            if (other.annotation != null)
+                return false;
+        } else if (!annotation.equals(other.annotation))
+            return false;
+        if (dbName == null) {
+            if (other.dbName != null)
+                return false;
+        } else if (!dbName.equals(other.dbName))
+            return false;
+        return true;
+    }
 }
