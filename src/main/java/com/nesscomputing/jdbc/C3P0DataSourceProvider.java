@@ -149,8 +149,7 @@ public class C3P0DataSourceProvider extends AbstractLifecycleProvider<DataSource
         DataSource unpooledDataSource = DataSources.unpooledDataSource(databaseConfig.getDbUri().toString(), driverProps);
         DatabaseChecker.checkConnection(unpooledDataSource);
 
-        final DataSource dataSource = DataSources.pooledDataSource(unpooledDataSource, poolProps);
-        return dataSource;
+        return DataSources.pooledDataSource(unpooledDataSource, poolProps);
     }
 
     private Properties getProperties(final String suffix)
