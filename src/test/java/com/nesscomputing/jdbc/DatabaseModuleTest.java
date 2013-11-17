@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -35,7 +36,7 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.google.inject.name.Names;
 import com.nesscomputing.config.Config;
-import com.nesscomputing.jdbc.DatabaseModule;
+import com.nesscomputing.config.ConfigModule;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
 
 @AllowDNSResolution
@@ -123,5 +124,24 @@ public class DatabaseModuleTest
                 connection.close();
             }
         }
+    }
+
+    @Test
+    public void testMultiInstallOk()
+    {
+        final Injector injector = Guice.createInjector(Stage.PRODUCTION,
+            new DatabaseModule("test"),
+            new DatabaseModule("test"),
+            ConfigModule.forTesting("ness.db.test.uri",  "jdbc:h2:mem:test" + UUID.randomUUID().toString()),
+            new Module() {
+                @Override
+                public void configure(final Binder binder) {
+                    binder.requireExplicitBindings();
+                    binder.disableCircularProxies();
+                }
+            });
+        final DataSource dataSource = injector.getInstance(Key.get(DataSource.class, Names.named("test")));
+        Assert.assertNotNull(dataSource);
+
     }
 }

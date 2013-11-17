@@ -21,8 +21,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
-import org.skife.jdbi.v2.IDBI;
-
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -34,6 +33,8 @@ import com.nesscomputing.jdbc.wrappers.CloseableWrapper;
 import com.nesscomputing.jdbc.wrappers.ConnectionWrapper;
 import com.nesscomputing.jdbc.wrappers.CreateArrayOfWrapper;
 import com.nesscomputing.logging.Log;
+
+import org.skife.jdbi.v2.IDBI;
 
 /**
  * Install this to provide a single pooled DataSource.  The database name is used to select configuration
@@ -68,12 +69,12 @@ public class DatabaseModule extends AbstractModule
     private final String dbName;
     private final Annotation annotation;
 
-    public DatabaseModule(@Nonnull String dbName)
+    public DatabaseModule(@Nonnull final String dbName)
     {
         this(dbName, Names.named(dbName));
     }
 
-    public DatabaseModule(@Nonnull String dbName,
+    public DatabaseModule(@Nonnull final String dbName,
                           @Nonnull final Annotation annotation)
     {
         Preconditions.checkArgument(dbName != null, "the database name must not be null!");
@@ -102,34 +103,26 @@ public class DatabaseModule extends AbstractModule
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result
-                + ((annotation == null) ? 0 : annotation.hashCode());
-        result = prime * result + ((dbName == null) ? 0 : dbName.hashCode());
-        return result;
+    public int hashCode()
+    {
+        return Objects.hashCode(dbName, annotation);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
+    public boolean equals(final Object obj)
+    {
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
-        DatabaseModule other = (DatabaseModule) obj;
-        if (annotation == null) {
-            if (other.annotation != null)
-                return false;
-        } else if (!annotation.equals(other.annotation))
-            return false;
-        if (dbName == null) {
-            if (other.dbName != null)
-                return false;
-        } else if (!dbName.equals(other.dbName))
-            return false;
-        return true;
+        }
+        final DatabaseModule that = (DatabaseModule) obj;
+
+        return Objects.equal(this.dbName, that.dbName)
+                        && Objects.equal(this.annotation, that.annotation);
     }
 }
